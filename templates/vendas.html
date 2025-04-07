@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Vendas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #141c29;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-sair {
+            background-color: #dc2626;
+            padding: 10px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .produto {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .produto label {
+            flex: 1;
+        }
+
+        input[type="number"] {
+            width: 60px;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-top: 15px;
+        }
+
+        button {
+            background-color: #1ca048;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Registro de Vendas</h1>
+        <a href="/login" class="btn-sair">Sair</a>
+    </header>
+
+    <div class="container">
+        <form action="/registro" method="POST" id="form-venda">
+            <h2>Selecione os Produtos</h2>
+
+            <div class="produto">
+                <label><input type="checkbox" name="produtos" value="Produto A" data-preco="199.90"> Produto A - R$ 199,90</label>
+                <input type="number" name="qtd_Produto A" value="1" min="1">
+            </div>
+
+            <div class="produto">
+                <label><input type="checkbox" name="produtos" value="Produto B" data-preco="349.90"> Produto B - R$ 349,90</label>
+                <input type="number" name="qtd_Produto B" value="1" min="1">
+            </div>
+
+            <div class="produto">
+                <label><input type="checkbox" name="produtos" value="Produto C" data-preco="499.90"> Produto C - R$ 499,90</label>
+                <input type="number" name="qtd_Produto C" value="1" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="cep">CEP:</label>
+                <input type="text" name="cep" id="cep" required>
+                <button type="button" onclick="buscarCEP()">Buscar CEP</button>
+            </div>
+
+            <div class="form-group">
+                <label for="rua">Rua:</label>
+                <input type="text" name="rua" id="rua" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bairro">Bairro:</label>
+                <input type="text" name="bairro" id="bairro" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cidade">Cidade:</label>
+                <input type="text" name="cidade" id="cidade" required>
+            </div>
+
+            <div class="form-group">
+                <label for="estado">Estado:</label>
+                <input type="text" name="estado" id="estado" required>
+            </div>
+
+            <div class="form-group">
+                <label for="data">Data da Venda:</label>
+                <input type="date" name="data" id="data" required>
+            </div>
+
+            <div class="total">Subtotal: R$ <span id="subtotal">0.00</span></div>
+
+            <button type="submit">Registrar Venda</button>
+        </form>
+    </div>
+
+    <script>
+        function buscarCEP() {
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            if (cep.length !== 8) return alert("CEP inválido!");
+
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert("CEP não encontrado.");
+                    } else {
+                        document.getElementById('rua').value = data.logradouro || '';
+                        document.getElementById('bairro').value = data.bairro || '';
+                        document.getElementById('cidade').value = data.localidade || '';
+                        document.getElementById('estado').value = data.uf || '';
+                    }
+                })
+                .catch(() => alert("Erro ao buscar o CEP."));
+        }
+
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const subtotalSpan = document.getElementById("subtotal");
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", atualizarSubtotal);
+        });
+
+        const numeros = document.querySelectorAll('input[type="number"]');
+        numeros.forEach(num => {
+            num.addEventListener("input", atualizarSubtotal);
+        });
+
+        function atualizarSubtotal() {
+            let total = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const preco = parseFloat(checkbox.dataset.preco);
+                    const nome = checkbox.value;
+                    const qtdInput = document.querySelector(`input[name="qtd_${nome}"]`);
+                    const qtd = parseInt(qtdInput.value) || 1;
+                    total += preco * qtd;
+                }
+            });
+            subtotalSpan.textContent = total.toFixed(2);
+        }
+    </script>
+</body>
+</html>

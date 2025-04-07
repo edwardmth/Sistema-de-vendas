@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Histórico de Vendas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f5f9;
+            padding: 20px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-voltar {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-sair {
+            background-color: #ef4444;
+            color: white;
+        }
+        table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/vendas" class="btn btn-voltar">Voltar</a>
+        <a href="/login" class="btn btn-sair">Sair</a>
+    </div>
+
+    <h2>Histórico de Vendas</h2>
+    <table>
+        <tr>
+            <th>Data</th>
+            <th>Endereço</th>
+            <th>CEP</th>
+            <th>Subtotal</th>
+        </tr>
+        {% for v in vendas %}
+        <tr>
+            <td>{{ v[0] }}</td>
+            <td>{{ v[1] }}, {{ v[2] }}, {{ v[3] }} - {{ v[4] }}</td>
+            <td>{{ v[5] }}</td>
+            <td>R$ {{ "%.2f"|format(v[6]) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

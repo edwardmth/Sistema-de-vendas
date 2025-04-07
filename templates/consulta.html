@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Consulta CEP</title></head>
+<body>
+  <h2>Consulta de CEP</h2>
+  <form method="POST">
+    <input type="text" name="cep" placeholder="Digite o CEP">
+    <button type="submit">Buscar</button>
+  </form>
+  {% if endereco %}
+    <p>Logradouro: {{ endereco['logradouro'] }}</p>
+    <p>Bairro: {{ endereco['bairro'] }}</p>
+    <p>Cidade: {{ endereco['localidade'] }}</p>
+  {% endif %}
+</body>
+</html>
