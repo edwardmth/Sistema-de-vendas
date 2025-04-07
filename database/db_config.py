@@ -1,19 +1,24 @@
 import mysql.connector
-from mysql.connector import Error
 
-def create_connection():
-    try:
-        print("🔌 Tentando conectar ao banco de dados...")
-        connection = mysql.connector.connect(
-            host='localhost',         # ou outro host, se não for local
-            user='root',              # substitua pelo usuário do seu MySQL
-            password='8077', # substitua pela senha do seu MySQL
-            database='vendas_db', # substitua pelo nome do banco
-            connection_timeout=5      # evita travamento eterno
-        )
-        if connection.is_connected():
-            print("✅ Conexão com o banco de dados estabelecida!")
-            return connection
-    except Error as e:
-        print(f"❌ Erro ao conectar ao banco: {e}")
-        return None
+print("🔌 Iniciando tentativa de conexão...")
+
+try:
+    print("📡 Tentando conectar ao MySQL...")
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="8077",  # <-- Substitua pela sua senha do MySQL
+        database="vendas_db"
+    )
+    print("✅ Conexão estabelecida com sucesso!")
+
+    cursor = conn.cursor()
+    cursor.execute("SHOW TABLES")
+    tabelas = cursor.fetchall()
+    print("📋 Tabelas encontradas:", tabelas)
+
+    conn.close()
+except mysql.connector.Error as err:
+    print(f"❌ Erro do MySQL: {err}")
+except Exception as e:
+    print(f"⚠️ Erro inesperado: {e}")

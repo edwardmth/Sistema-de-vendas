@@ -1,194 +1,387 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Vendas</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: "Segoe UI", sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas | Portal Corporativo</title>
+  <style>
+    :root {
+      --primary-color: #27ae60;
+      --primary-dark: #219653;
+      --primary-light: #6fcf97;
+      --secondary-color: #2d9cdb;
+      --background: #f8f9fa;
+      --text-color: #333;
+      --light-text: #f8f9fa;
+      --card-bg: #ffffff;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --border-radius: 12px;
+      --transition: all 0.3s ease;
+    }
 
-        header {
-            background-color: #141c29;
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        .btn-sair {
-            background-color: #dc2626;
-            padding: 10px 15px;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+      background-image: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 100%);
+    }
 
-        .container {
-            max-width: 800px;
-            margin: 30px auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-        }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
 
-        h2 {
-            margin-bottom: 20px;
-        }
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--primary-color), var(--primary-light), var(--secondary-color));
+    }
 
-        .produto {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 25px;
+      font-size: 2.2rem;
+      position: relative;
+      padding-bottom: 10px;
+    }
 
-        .produto label {
-            flex: 1;
-        }
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+      border-radius: 3px;
+    }
 
-        input[type="number"] {
-            width: 60px;
-        }
+    label {
+      margin-top: 15px;
+      display: block;
+      font-weight: 500;
+      color: var(--primary-dark);
+    }
 
-        .total {
-            font-weight: bold;
-            font-size: 18px;
-            margin-top: 20px;
-        }
+    input, select {
+      width: 100%;
+      padding: 12px 15px;
+      margin-top: 8px;
+      border-radius: var(--border-radius);
+      border: 1px solid #ddd;
+      font-size: 16px;
+      transition: var(--transition);
+      background-color: #f8f9fa;
+    }
 
-        .form-group {
-            margin-top: 15px;
-        }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+    }
 
-        button {
-            background-color: #1ca048;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-top: 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+    button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      background: var(--primary-color);
+      color: var(--light-text);
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        button:hover {
-            background-color: #1d4ed8;
-        }
-    </style>
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(33, 150, 83, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .subtotal {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: var(--primary-dark);
+      padding: 10px;
+      background-color: rgba(39, 174, 96, 0.1);
+      border-radius: var(--border-radius);
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .actions button {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .actions button:nth-child(2) {
+      background: var(--secondary-color);
+    }
+
+    .actions button:nth-child(2):hover {
+      background: #2a89bb;
+    }
+
+    .actions button:last-child {
+      background: #e74c3c;
+    }
+
+    .actions button:last-child:hover {
+      background: #c0392b;
+    }
+
+    /* Efeito Aurora */
+    @keyframes aurora {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .aurora-effect {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(-45deg, 
+        rgba(39, 174, 96, 0.05), 
+        rgba(111, 207, 151, 0.05), 
+        rgba(45, 156, 219, 0.05), 
+        rgba(155, 89, 182, 0.05));
+      background-size: 400% 400%;
+      animation: aurora 15s ease infinite;
+      z-index: -1;
+      opacity: 0.7;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .row {
+        flex-direction: column;
+        gap: 0;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+      
+      .actions button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      .container {
+        padding: 15px;
+      }
+      
+      input, select, button {
+        padding: 10px 12px;
+      }
+    }
+  </style>
+  <script>
+    function buscarEndereco() {
+      const cep = document.getElementById('cep').value.replace(/\D/g, '');
+      if (cep.length !== 8) {
+        alert('CEP inválido! Deve conter 8 dígitos.');
+        return;
+      }
+      
+      // Mostrar loading
+      const btn = document.querySelector('button[onclick="buscarEndereco()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loading">Buscando...</span>';
+      btn.disabled = true;
+      
+      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.erro) {
+            throw new Error('CEP não encontrado');
+          }
+          document.getElementById('rua').value = data.logradouro || '';
+          document.getElementById('bairro').value = data.bairro || '';
+          document.getElementById('cidade').value = data.localidade || '';
+          document.getElementById('estado').value = data.uf || '';
+        })
+        .catch(error => {
+          alert('Erro ao buscar CEP: ' + error.message);
+        })
+        .finally(() => {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        });
+    }
+
+    function atualizarSubtotal() {
+      const produto = document.getElementById('produto');
+      const valor = parseFloat(produto.value || 0);
+      const quantidade = parseInt(document.getElementById('quantidade').value || 1);
+      const total = valor * quantidade;
+      const subtotalElement = document.getElementById('subtotal');
+      
+      subtotalElement.innerHTML = `
+        <span>Subtotal: <strong>R$ ${total.toFixed(2).replace('.', ',')}</strong></span>
+      `;
+      
+      // Efeito de animação
+      subtotalElement.style.animation = 'none';
+      setTimeout(() => {
+        subtotalElement.style.animation = 'pulse 0.5s';
+      }, 10);
+    }
+    
+    // Mascara para CEP
+    document.getElementById('cep').addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length > 5) {
+        value = value.substring(0, 5) + '-' + value.substring(5, 8);
+      }
+      e.target.value = value;
+    });
+    
+    // Inicializa o subtotal
+    document.addEventListener('DOMContentLoaded', function() {
+      atualizarSubtotal();
+    });
+  </script>
 </head>
 <body>
-    <header>
-        <h1>Registro de Vendas</h1>
-        <a href="/login" class="btn-sair">Sair</a>
-    </header>
+  <div class="container">
+    <div class="aurora-effect"></div>
+    <h1>Registro de Vendas</h1>
+    <form method="POST" action="/registro">
+      <label>Nome do Cliente:</label>
+      <input type="text" name="nome" required placeholder="Digite o nome completo">
 
-    <div class="container">
-        <form action="/registro" method="POST" id="form-venda">
-            <h2>Selecione os Produtos</h2>
+      <label>Produto:</label>
+      <select id="produto" name="produto" onchange="atualizarSubtotal()" required>
+        <option value="">Selecione um produto...</option>
+        <option value="499.90">Smartphone - R$499,90</option>
+        <option value="129.99">Fone Bluetooth - R$129,99</option>
+        <option value="249.50">Tablet - R$249,50</option>
+        <option value="899.00">Notebook - R$899,00</option>
+        <option value="159.90">Smartwatch - R$159,90</option>
+      </select>
 
-            <div class="produto">
-                <label><input type="checkbox" name="produtos" value="Produto A" data-preco="199.90"> Produto A - R$ 199,90</label>
-                <input type="number" name="qtd_Produto A" value="1" min="1">
-            </div>
+      <label>Quantidade:</label>
+      <input type="number" id="quantidade" value="1" min="1" onchange="atualizarSubtotal()">
 
-            <div class="produto">
-                <label><input type="checkbox" name="produtos" value="Produto B" data-preco="349.90"> Produto B - R$ 349,90</label>
-                <input type="number" name="qtd_Produto B" value="1" min="1">
-            </div>
+      <div class="subtotal" id="subtotal">Subtotal: R$ 0,00</div>
 
-            <div class="produto">
-                <label><input type="checkbox" name="produtos" value="Produto C" data-preco="499.90"> Produto C - R$ 499,90</label>
-                <input type="number" name="qtd_Produto C" value="1" min="1">
-            </div>
+      <label>Data da Venda:</label>
+      <input type="date" name="data_venda" required>
 
-            <div class="form-group">
-                <label for="cep">CEP:</label>
-                <input type="text" name="cep" id="cep" required>
-                <button type="button" onclick="buscarCEP()">Buscar CEP</button>
-            </div>
+      <label>CEP:</label>
+      <div class="row">
+        <input type="text" id="cep" name="cep" required placeholder="00000-000" maxlength="9">
+        <button type="button" onclick="buscarEndereco()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 5px;">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          Buscar CEP
+        </button>
+      </div>
 
-            <div class="form-group">
-                <label for="rua">Rua:</label>
-                <input type="text" name="rua" id="rua" required>
-            </div>
+      <label>Rua:</label>
+      <input type="text" id="rua" name="rua" required placeholder="Nome da rua">
 
-            <div class="form-group">
-                <label for="bairro">Bairro:</label>
-                <input type="text" name="bairro" id="bairro" required>
-            </div>
+      <label>Bairro:</label>
+      <input type="text" id="bairro" name="bairro" required placeholder="Nome do bairro">
 
-            <div class="form-group">
-                <label for="cidade">Cidade:</label>
-                <input type="text" name="cidade" id="cidade" required>
-            </div>
+      <label>Cidade:</label>
+      <input type="text" id="cidade" name="cidade" required placeholder="Nome da cidade">
 
-            <div class="form-group">
-                <label for="estado">Estado:</label>
-                <input type="text" name="estado" id="estado" required>
-            </div>
+      <label>Estado:</label>
+      <input type="text" id="estado" name="estado" required placeholder="UF" maxlength="2">
 
-            <div class="form-group">
-                <label for="data">Data da Venda:</label>
-                <input type="date" name="data" id="data" required>
-            </div>
-
-            <div class="total">Subtotal: R$ <span id="subtotal">0.00</span></div>
-
-            <button type="submit">Registrar Venda</button>
-        </form>
-    </div>
-
-    <script>
-        function buscarCEP() {
-            const cep = document.getElementById('cep').value.replace(/\D/g, '');
-            if (cep.length !== 8) return alert("CEP inválido!");
-
-            fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.erro) {
-                        alert("CEP não encontrado.");
-                    } else {
-                        document.getElementById('rua').value = data.logradouro || '';
-                        document.getElementById('bairro').value = data.bairro || '';
-                        document.getElementById('cidade').value = data.localidade || '';
-                        document.getElementById('estado').value = data.uf || '';
-                    }
-                })
-                .catch(() => alert("Erro ao buscar o CEP."));
-        }
-
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-        const subtotalSpan = document.getElementById("subtotal");
-
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener("change", atualizarSubtotal);
-        });
-
-        const numeros = document.querySelectorAll('input[type="number"]');
-        numeros.forEach(num => {
-            num.addEventListener("input", atualizarSubtotal);
-        });
-
-        function atualizarSubtotal() {
-            let total = 0;
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    const preco = parseFloat(checkbox.dataset.preco);
-                    const nome = checkbox.value;
-                    const qtdInput = document.querySelector(`input[name="qtd_${nome}"]`);
-                    const qtd = parseInt(qtdInput.value) || 1;
-                    total += preco * qtd;
-                }
-            });
-            subtotalSpan.textContent = total.toFixed(2);
-        }
-    </script>
+      <div class="actions">
+        <button type="submit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 5px;">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+            <path d="M17 21v-8H7v8"></path>
+            <path d="M7 3v5h8"></path>
+          </svg>
+          Registrar Venda
+        </button>
+        <a href="/registro"><button type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 5px;">
+            <path d="M8 17l4 4 4-4"></path>
+            <path d="M12 12v9"></path>
+            <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"></path>
+          </svg>
+          Ver Registros
+        </button></a>
+        <a href="/login"><button type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 5px;">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+            <path d="M16 17l5-5-5-5"></path>
+            <path d="M21 12H9"></path>
+          </svg>
+          Sair
+        </button></a>
+      </div>
+    </form>
+  </div>
 </body>
 </html>
