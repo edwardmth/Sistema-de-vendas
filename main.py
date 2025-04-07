@@ -1,145 +1,155 @@
 import os
-import urllib.parse
 import json
-from http.server import SimpleHTTPRequestHandler, HTTPServer
+import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs
 from jinja2 import Environment, FileSystemLoader
-from database.db_config import create_connection
-from modules.cep_api import consultar_cep
+import pymysql
 
+# Configuração do Jinja2
 env = Environment(loader=FileSystemLoader('templates'))
 
-class ServidorHandler(SimpleHTTPRequestHandler):
+# Conexão com o banco de dados
+try:
+    connection = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='8077',
+        database='vendas_db',
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    print("✅ Conexão com banco de dados OK!")
+except Exception as e:
+    print("❌ Erro de conexão com o banco de dados:", e)
+
+# Classe principal do servidor
+class RequestHandler(BaseHTTPRequestHandler):
+
     def do_GET(self):
-        if self.path == '/':
-            self.redirect('/login')
-        elif self.path == '/login':
+        if self.path == '/' or self.path == '/login':
             self.render_template('login.html')
         elif self.path == '/vendas':
             self.render_template('vendas.html')
         elif self.path == '/registro':
-            self.exibir_historico()
+            self.exibir_registro()
         elif self.path.startswith('/static/'):
-            self.serve_static()
+            self.serve_static_file()
         else:
-            self.send_error(404, "Rota não encontrada")
+            self.send_error(404, 'Página não encontrada')
 
     def do_POST(self):
         if self.path == '/login':
-            self.tratar_login()
+            self.processar_login()
         elif self.path == '/registro':
-            self.tratar_registro()
+            self.registrar_venda()
         elif self.path == '/consultar-cep':
-            self.tratar_cep()
-        else:
-            self.send_error(404, "Rota POST não encontrada.")
+            self.consultar_cep()
 
-    def tratar_login(self):
-        length = int(self.headers['Content-Length'])
-        body = self.rfile.read(length).decode()
-        data = urllib.parse.parse_qs(body)
-
-        usuario = data.get('usuario', [''])[0]
-        senha = data.get('senha', [''])[0]
-
-        conn = create_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM usuarios WHERE login = %s AND senha = %s", (usuario, senha))
-        resultado = cursor.fetchone()
-        conn.close()
-
-        if resultado:
-            self.send_response(303)
-            self.send_header('Location', '/vendas')
-            self.end_headers()
-        else:
-            self.render_template('login.html', {'erro': 'Credenciais inválidas'})
-
-    def tratar_cep(self):
-        length = int(self.headers['Content-Length'])
-        body = self.rfile.read(length).decode()
-        data = urllib.parse.parse_qs(body)
-        cep = data.get('cep', [''])[0]
-
-        endereco = consultar_cep(cep)
+    def render_template(self, filename, context={}):
+        template = env.get_template(filename)
+        content = template.render(context).encode()
         self.send_response(200)
-        self.send_header('Content-type', 'application/json')
+        self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(json.dumps(endereco or {}).encode())
+        self.wfile.write(content)
 
-    def tratar_registro(self):
-        length = int(self.headers['Content-Length'])
-        body = self.rfile.read(length).decode()
-        data = urllib.parse.parse_qs(body)
-
-        nome = data.get('nome', [''])[0]
-        produto = data.get('produto', [''])[0]
-        preco = float(data.get('preco', ['0'])[0])
-        data_venda = data.get('data_venda', [''])[0]
-        cep = data.get('cep', [''])[0]
-        rua = data.get('rua', [''])[0]
-        bairro = data.get('bairro', [''])[0]
-        cidade = data.get('cidade', [''])[0]
-        estado = data.get('estado', [''])[0]
-
-        conn = create_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO vendas (nome, produto, preco, data_venda, cep, rua, bairro, cidade, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (nome, produto, preco, data_venda, cep, rua, bairro, cidade, estado))
-        conn.commit()
-        conn.close()
-
-        self.send_response(303)
-        self.send_header('Location', '/registro')
-        self.end_headers()
-
-    def exibir_historico(self):
-        conn = create_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT nome, produto, preco, data_venda FROM vendas ORDER BY id DESC")
-        vendas = cursor.fetchall()
-        conn.close()
-        self.render_template('registro.html', {'vendas': vendas})
-
-    def serve_static(self):
-        file_path = self.path.lstrip('/')
-        if os.path.exists(file_path):
-            self.send_response(200)
-            if file_path.endswith('.css'):
-                self.send_header('Content-type', 'text/css')
-            elif file_path.endswith('.js'):
-                self.send_header('Content-type', 'application/javascript')
-            elif file_path.endswith('.png'):
-                self.send_header('Content-type', 'image/png')
-            elif file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
-                self.send_header('Content-type', 'image/jpeg')
-            else:
-                self.send_header('Content-type', 'application/octet-stream')
-            self.end_headers()
-            with open(file_path, 'rb') as file:
-                self.wfile.write(file.read())
-        else:
+    def serve_static_file(self):
+        try:
+            filepath = self.path.lstrip('/')
+            with open(filepath, 'rb') as file:
+                content = file.read()
+                self.send_response(200)
+                if filepath.endswith('.css'):
+                    self.send_header('Content-Type', 'text/css')
+                elif filepath.endswith('.jpg') or filepath.endswith('.jpeg'):
+                    self.send_header('Content-Type', 'image/jpeg')
+                elif filepath.endswith('.png'):
+                    self.send_header('Content-Type', 'image/png')
+                self.end_headers()
+                self.wfile.write(content)
+        except FileNotFoundError:
             self.send_error(404, 'Arquivo não encontrado')
 
-    def render_template(self, template_name, context=None):
-        if context is None:
-            context = {}
-        template = env.get_template(template_name)
-        content = template.render(context)
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write(content.encode('utf-8'))
+    def processar_login(self):
+        length = int(self.headers['Content-Length'])
+        data = self.rfile.read(length).decode()
+        params = parse_qs(data)
+        login = params.get('login', [''])[0]
+        senha = params.get('senha', [''])[0]
 
-    def redirect(self, location):
-        self.send_response(303)
-        self.send_header('Location', location)
-        self.end_headers()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM usuarios WHERE login=%s AND senha=%s", (login, senha))
+                user = cursor.fetchone()
+                if user:
+                    self.send_response(303)
+                    self.send_header('Location', '/vendas')
+                    self.end_headers()
+                else:
+                    self.render_template('login.html', {'erro': 'Credenciais inválidas'})
+        except Exception as e:
+            print("Erro no login:", e)
+            self.render_template('login.html', {'erro': 'Erro interno no servidor'})
 
+    def consultar_cep(self):
+        length = int(self.headers['Content-Length'])
+        data = self.rfile.read(length).decode()
+        params = parse_qs(data)
+        cep = params.get('cep', [''])[0]
+        try:
+            with urllib.request.urlopen(f'https://viacep.com.br/ws/{cep}/json/') as response:
+                result = response.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(result)
+        except Exception as e:
+            print("Erro ao buscar CEP:", e)
+            self.send_error(500, 'Erro ao consultar o CEP')
+
+    def registrar_venda(self):
+        length = int(self.headers['Content-Length'])
+        data = self.rfile.read(length).decode()
+        params = parse_qs(data)
+
+        nome = params.get('nome', [''])[0]
+        produto = params.get('produto', [''])[0]
+        data_venda = params.get('data_venda', [''])[0]
+        cep = params.get('cep', [''])[0]
+        rua = params.get('rua', [''])[0]
+        bairro = params.get('bairro', [''])[0]
+        cidade = params.get('cidade', [''])[0]
+        estado = params.get('estado', [''])[0]
+
+        endereco = f"{rua}, {bairro}, {cidade} - {estado} ({cep})"
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO vendas (cliente_nome, produto, data_venda, endereco_entrega)
+                    VALUES (%s, %s, %s, %s)
+                """, (nome, produto, data_venda, endereco))
+                connection.commit()
+                self.send_response(303)
+                self.send_header('Location', '/registro')
+                self.end_headers()
+        except Exception as e:
+            print("Erro ao registrar venda:", e)
+            self.render_template('vendas.html', {'erro': 'Erro ao registrar venda'})
+
+    def exibir_registro(self):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM vendas ORDER BY id DESC")
+                vendas = cursor.fetchall()
+                self.render_template('registro.html', {'vendas': vendas})
+        except Exception as e:
+            print("Erro ao exibir registro:", e)
+            self.render_template('registro.html', {'vendas': []})
+
+# Inicialização do servidor
 if __name__ == '__main__':
-    host = 'localhost'
-    port = 8000
-    with HTTPServer((host, port), ServidorHandler) as server:
-        print(f"Servidor rodando em http://{host}:{port}")
-        server.serve_forever()
+    server = HTTPServer(('localhost', 8000), RequestHandler)
+    print("🚀 Servidor rodando em http://localhost:8000")
+    server.serve_forever()
