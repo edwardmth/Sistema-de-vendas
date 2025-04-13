@@ -1,6 +1,6 @@
 import os
 import json
-import time  # Adicione esta linha
+import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs
@@ -30,7 +30,6 @@ def buscar_produtos():
         with connection.cursor() as cursor:
             cursor.execute("SELECT id, nome, preco FROM produtos")
             produtos = cursor.fetchall()
-            print("Produtos recuperados do banco:", produtos)  # Verifique se os produtos estão sendo impressos corretamente no console
             # Formatar o preço
             for produto in produtos:
                 produto['preco_formatado'] = f"R$ {produto['preco']:.2f}"
@@ -39,23 +38,46 @@ def buscar_produtos():
         print("Erro ao buscar produtos:", e)
         return []
 
+# Função para verificar se o usuário está logado
+def verificar_sessao(cookies):
+    session_id = cookies.get('session_id')
+    if session_id:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM sessao WHERE session_id = %s", (session_id,))
+                return cursor.fetchone()  # Retorna o usuário se encontrado
+        except Exception as e:
+            print("Erro ao verificar sessão:", e)
+    return None  # Se não encontrar a sessão, retorna None
+
 # Classe principal do servidor
 class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
+        cookies = self.get_cookies()  # Pega os cookies da requisição
+
         if self.path == '/' or self.path == '/login':
             self.render_template('login.html')
 
         elif self.path == '/vendas':
+            if not verificar_sessao(cookies):  # Verifica se o usuário está logado
+                self.send_response(303)
+                self.send_header('Location', '/login')
+                self.end_headers()
+                return
             try:
                 produtos = buscar_produtos()  # Chama a função para recuperar os produtos
-                print("Produtos enviados para o template:", produtos)  # Verifique no console se os produtos estão corretos
-                self.render_template('venda.html', {'produtos': produtos})  # Passa os produtos para o template
+                self.render_template('venda.html', {'produtos': produtos})
             except Exception as e:
                 print("Erro ao carregar página de vendas:", e)
                 self.render_template('venda.html', {'erro': 'Erro ao carregar produtos'})
 
         elif self.path == '/registro':
+            if not verificar_sessao(cookies):  # Verifica se o usuário está logado
+                self.send_response(303)
+                self.send_header('Location', '/login')
+                self.end_headers()
+                return
             self.exibir_registro()
 
         elif self.path.startswith('/static/'):
@@ -73,7 +95,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.consultar_cep()
 
     def render_template(self, filename, context={}):
-        context['timestamp'] = str(time.time())  # Adicione esta linha
+        context['timestamp'] = str(time.time())  # Adiciona um timestamp para evitar cache
         template = env.get_template(filename)
         content = template.render(context).encode()
         self.send_response(200)
@@ -117,7 +139,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 cursor.execute("SELECT * FROM usuarios WHERE login=%s AND senha=%s", (login, senha))
                 user = cursor.fetchone()
                 if user:
+                    session_id = str(time.time())  # Gerando um session_id único
+                    cursor.execute("INSERT INTO sessao (session_id, user_id) VALUES (%s, %s)", (session_id, user['id']))
+                    connection.commit()
+
+                    # Definindo o cookie para o navegador
                     self.send_response(303)
+                    self.send_header('Set-Cookie', f'session_id={session_id}; Path=/; HttpOnly')
                     self.send_header('Location', '/vendas')
                     self.end_headers()
                 else:
@@ -165,10 +193,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 produto_nome = produto_result['nome'] if produto_result else "Produto desconhecido"
                 
                 # Agora insira a venda com o nome do produto
-                cursor.execute("""
-                    INSERT INTO vendas (cliente_nome, produto, data_venda, endereco_entrega)
-                    VALUES (%s, %s, %s, %s)
-                """, (nome, produto_nome, data_venda, endereco))
+                cursor.execute("""INSERT INTO vendas (cliente_nome, produto, data_venda, endereco_entrega) VALUES (%s, %s, %s, %s)""", (nome, produto_nome, data_venda, endereco))
                 connection.commit()
                 self.send_response(303)
                 self.send_header('Location', '/registro')
@@ -186,6 +211,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             print("Erro ao exibir registro:", e)
             self.render_template('registro.html', {'vendas': []})
+
+    # Função para pegar os cookies da requisição
+    def get_cookies(self):
+        cookies = {}
+        cookie_header = self.headers.get('Cookie')
+        if cookie_header:
+            for cookie in cookie_header.split(';'):
+                key, value = cookie.split('=')
+                cookies[key.strip()] = value.strip()
+        return cookies
 
 # Inicialização do servidor
 if __name__ == '__main__':
