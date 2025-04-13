@@ -1,5 +1,6 @@
 import os
 import json
+import time  # Adicione esta linha
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs
@@ -23,18 +24,43 @@ try:
 except Exception as e:
     print("❌ Erro de conexão com o banco de dados:", e)
 
+def buscar_produtos():
+    try:
+        # Consultando os produtos do banco
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, nome, preco FROM produtos")
+            produtos = cursor.fetchall()
+            print("Produtos recuperados do banco:", produtos)  # Verifique se os produtos estão sendo impressos corretamente no console
+            # Formatar o preço
+            for produto in produtos:
+                produto['preco_formatado'] = f"R$ {produto['preco']:.2f}"
+            return produtos
+    except Exception as e:
+        print("Erro ao buscar produtos:", e)
+        return []
+
 # Classe principal do servidor
 class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/' or self.path == '/login':
             self.render_template('login.html')
+
         elif self.path == '/vendas':
-            self.render_template('vendas.html')
+            try:
+                produtos = buscar_produtos()  # Chama a função para recuperar os produtos
+                print("Produtos enviados para o template:", produtos)  # Verifique no console se os produtos estão corretos
+                self.render_template('venda.html', {'produtos': produtos})  # Passa os produtos para o template
+            except Exception as e:
+                print("Erro ao carregar página de vendas:", e)
+                self.render_template('venda.html', {'erro': 'Erro ao carregar produtos'})
+
         elif self.path == '/registro':
             self.exibir_registro()
+
         elif self.path.startswith('/static/'):
             self.serve_static_file()
+
         else:
             self.send_error(404, 'Página não encontrada')
 
@@ -47,10 +73,15 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.consultar_cep()
 
     def render_template(self, filename, context={}):
+        context['timestamp'] = str(time.time())  # Adicione esta linha
         template = env.get_template(filename)
         content = template.render(context).encode()
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
+        # Forçar o recarregamento da página e desativar o cache
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
         self.end_headers()
         self.wfile.write(content)
 
@@ -60,6 +91,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             with open(filepath, 'rb') as file:
                 content = file.read()
                 self.send_response(200)
+                self.send_header('Cache-Control', 'no-store')  # Desativa o cache
+                self.send_header('Pragma', 'no-cache')         # Para navegadores antigos
+                self.send_header('Expires', '0')      
                 if filepath.endswith('.css'):
                     self.send_header('Content-Type', 'text/css')
                 elif filepath.endswith('.jpg') or filepath.endswith('.jpeg'):
@@ -114,29 +148,34 @@ class RequestHandler(BaseHTTPRequestHandler):
         params = parse_qs(data)
 
         nome = params.get('nome', [''])[0]
-        produto = params.get('produto', [''])[0]
+        produto_id = params.get('produto_id', [''])[0]
         data_venda = params.get('data_venda', [''])[0]
         cep = params.get('cep', [''])[0]
         rua = params.get('rua', [''])[0]
         bairro = params.get('bairro', [''])[0]
         cidade = params.get('cidade', [''])[0]
         estado = params.get('estado', [''])[0]
-
         endereco = f"{rua}, {bairro}, {cidade} - {estado} ({cep})"
 
         try:
             with connection.cursor() as cursor:
+                # Primeiro, obtenha o nome do produto usando o ID
+                cursor.execute("SELECT nome FROM produtos WHERE id = %s", (produto_id,))
+                produto_result = cursor.fetchone()
+                produto_nome = produto_result['nome'] if produto_result else "Produto desconhecido"
+                
+                # Agora insira a venda com o nome do produto
                 cursor.execute("""
                     INSERT INTO vendas (cliente_nome, produto, data_venda, endereco_entrega)
                     VALUES (%s, %s, %s, %s)
-                """, (nome, produto, data_venda, endereco))
+                """, (nome, produto_nome, data_venda, endereco))
                 connection.commit()
                 self.send_response(303)
                 self.send_header('Location', '/registro')
                 self.end_headers()
         except Exception as e:
             print("Erro ao registrar venda:", e)
-            self.render_template('vendas.html', {'erro': 'Erro ao registrar venda'})
+            self.render_template('venda.html', {'erro': 'Erro ao registrar venda'})
 
     def exibir_registro(self):
         try:
