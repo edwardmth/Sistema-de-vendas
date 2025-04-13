@@ -1,4 +1,4 @@
-# 🛒 Sistema de Vendas
+# Sistema de Vendas
 
 Sistema completo de gerenciamento de vendas, com autenticação de usuários, controle de produtos, registro de vendas e histórico de transações.
 
